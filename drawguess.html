@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🎨 你画我猜 · 全屏对战</title>
+    <title>🎨 你画我猜 · 竖屏全屏</title>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
         :root {
@@ -26,29 +26,26 @@
             box-sizing: border-box;
         }
 
-        body {
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
             font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
             background: var(--bg);
-            height: 100vh;
-            height: -webkit-fill-available;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             color: var(--text);
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            overflow: hidden;
+            -webkit-user-select: none;
         }
 
         .game-container {
-            width: 100%;
-            max-width: 500px;
-            height: 100vh;
-            height: -webkit-fill-available;
             display: flex;
             flex-direction: column;
+            height: 100%;
+            max-width: 500px;
+            margin: 0 auto;
             background: var(--surface);
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 30px rgba(0,0,0,0.6);
             position: relative;
         }
 
@@ -59,32 +56,33 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 8px;
             flex-shrink: 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             z-index: 10;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
         }
         .room-info {
             display: flex;
             align-items: center;
             gap: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 6px 14px;
+            background: rgba(255,255,255,0.05);
+            padding: 6px 12px;
             border-radius: 30px;
             font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
+            white-space: nowrap;
         }
         .room-info .dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
             background: var(--success);
-            margin-right: 4px;
+            margin-right: 2px;
         }
         .btn-sm {
             background: transparent;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255,255,255,0.3);
             color: #fff;
             padding: 6px 12px;
             border-radius: 20px;
@@ -103,9 +101,9 @@
         .canvas-container {
             flex: 1 1 auto;
             position: relative;
-            background: #fff;
+            background: #ffffff;
             margin: 0;
-            border-bottom: 3px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 3px solid rgba(255,255,255,0.1);
             overflow: hidden;
             touch-action: none;
             cursor: crosshair;
@@ -113,7 +111,7 @@
         }
         .canvas-container.active-draw {
             border-bottom-color: var(--accent);
-            box-shadow: inset 0 0 20px rgba(255, 209, 102, 0.2);
+            box-shadow: inset 0 0 20px rgba(255,209,102,0.2);
         }
         canvas {
             display: block;
@@ -127,7 +125,7 @@
             transform: translate(-50%, -50%);
             font-size: 2.2rem;
             font-weight: 800;
-            color: rgba(0, 0, 0, 0.15);
+            color: rgba(0,0,0,0.15);
             pointer-events: none;
             letter-spacing: 4px;
         }
@@ -135,7 +133,7 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0,0,0,0.6);
             color: var(--accent);
             padding: 4px 12px;
             border-radius: 20px;
@@ -144,28 +142,26 @@
             letter-spacing: 2px;
         }
 
-        /* 底部滑动区域 */
+        /* 底部操作区 */
         .bottom-panel {
             flex-shrink: 0;
-            max-height: 35vh;
+            max-height: 38vh;
             overflow-y: auto;
             background: var(--surface);
             padding: 12px;
             display: flex;
             flex-direction: column;
             gap: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255,255,255,0.08);
             -webkit-overflow-scrolling: touch;
         }
-
         .score-row {
             display: flex;
             gap: 10px;
             justify-content: center;
-            margin-bottom: 4px;
         }
         .score-card {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0,0,0,0.3);
             border-radius: 14px;
             padding: 8px 16px;
             text-align: center;
@@ -175,7 +171,7 @@
         }
         .score-card.active-turn {
             border-color: var(--accent);
-            box-shadow: 0 0 14px rgba(255, 209, 102, 0.4);
+            box-shadow: 0 0 14px rgba(255,209,102,0.4);
         }
         .score-card .name {
             font-size: 0.7rem;
@@ -190,7 +186,7 @@
             font-size: 0.6rem;
             padding: 2px 8px;
             border-radius: 10px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255,255,255,0.1);
             display: inline-block;
         }
 
@@ -203,8 +199,8 @@
             flex: 1;
             padding: 12px 14px;
             border-radius: 30px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.4);
             color: #fff;
             font-size: 0.95rem;
             font-family: inherit;
@@ -237,13 +233,12 @@
             display: flex;
             flex-direction: column;
             gap: 6px;
-            margin-top: 4px;
         }
         .chat-messages {
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0,0,0,0.3);
             border-radius: 12px;
             padding: 8px;
-            height: 90px;
+            height: 80px;
             overflow-y: auto;
             font-size: 0.75rem;
             display: flex;
@@ -253,7 +248,7 @@
         .chat-msg {
             padding: 4px 8px;
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255,255,255,0.05);
             word-break: break-word;
         }
         .chat-msg.system {
@@ -263,12 +258,12 @@
             background: transparent;
         }
         .chat-msg.correct {
-            background: rgba(46, 204, 113, 0.2);
+            background: rgba(46,204,113,0.2);
             color: #7bed9f;
             font-weight: 700;
         }
         .chat-msg.wrong {
-            background: rgba(231, 76, 60, 0.2);
+            background: rgba(231,76,60,0.2);
             color: #ff7675;
         }
         .chat-input-row {
@@ -279,14 +274,14 @@
             flex: 1;
             padding: 10px 12px;
             border-radius: 25px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
             color: #fff;
             font-size: 0.85rem;
         }
         .btn-chat {
             background: var(--surface2);
-            border: 2px solid rgba(255, 255, 255, 0.25);
+            border: 2px solid rgba(255,255,255,0.25);
             color: #fff;
             padding: 10px 16px;
             border-radius: 25px;
@@ -299,7 +294,7 @@
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0,0,0,0.7);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -320,8 +315,8 @@
         .modal input {
             padding: 12px;
             border-radius: 30px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.3);
             color: #fff;
             text-align: center;
             font-size: 1rem;
@@ -353,14 +348,8 @@
             animation: toastIn 0.3s ease;
         }
         @keyframes toastIn {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
+            from { opacity:0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity:1; transform: translateX(-50%) translateY(0); }
         }
         .hidden {
             display: none !important;
@@ -375,7 +364,7 @@
             gap: 6px;
             flex-wrap: wrap;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0,0,0,0.4);
             padding: 6px;
             border-radius: 30px;
             backdrop-filter: blur(6px);
@@ -386,7 +375,7 @@
             height: 30px;
             border-radius: 50%;
             border: 2px solid transparent;
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255,255,255,0.15);
             cursor: pointer;
             color: #fff;
             font-size: 0.9rem;
@@ -396,20 +385,20 @@
         }
         .tools-mini .active {
             border-color: var(--accent);
-            background: rgba(255, 209, 102, 0.3);
+            background: rgba(255,209,102,0.3);
         }
         .color-dot {
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.4);
+            border: 2px solid rgba(255,255,255,0.4);
             cursor: pointer;
         }
         .size-slider {
             -webkit-appearance: none;
             width: 50px;
             height: 4px;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255,255,255,0.3);
             border-radius: 2px;
             outline: none;
         }
@@ -450,14 +439,14 @@
             </div>
 
             <div class="answer-row">
-                <input type="text" id="guessInput" placeholder="✏️ 输入你的答案..." disabled maxlength="20">
-                <button class="btn-submit" id="btnSubmitGuess" disabled>提交答案</button>
+                <input type="text" id="guessInput" placeholder="✏️ 输入答案" disabled maxlength="20">
+                <button class="btn-submit" id="btnSubmitGuess" disabled>提交</button>
             </div>
 
             <div class="chat-section">
                 <div class="chat-messages" id="chatMessages"></div>
                 <div class="chat-input-row">
-                    <input type="text" id="chatInput" placeholder="💬 发送消息..." maxlength="50">
+                    <input type="text" id="chatInput" placeholder="💬 聊天消息" maxlength="50">
                     <button class="btn-chat" id="btnSendChat">发送</button>
                 </div>
             </div>
@@ -616,25 +605,10 @@
                     case 'player_joined': STATE.opponentName=msg.playerName; updateScoreboard(); break;
                     case 'game_start': handleGameStart(msg); break;
                     case 'round_start': handleRoundStart(msg); break;
-                    case 'guess_result':
-                        if(msg.correct) {
-                            addChatMsg('✅ 猜对了！', 'correct');
-                            showToast('猜对了！');
-                            if(!STATE.isDrawer) {
-                                STATE.myScore += Math.max(1, Math.floor(STATE.timeLeft/5));
-                                updateScoreboard();
-                            }
-                            endRound(true);
-                        } else {
-                            addChatMsg('❌ 猜错了', 'wrong');
-                            showToast('猜错了，再试试');
-                        }
-                        break;
+                    case 'guess_check': handleGuessCheck(msg); break;
                     case 'round_end': handleRoundEnd(msg); break;
                     case 'game_over': handleGameOver(msg); break;
-                    case 'chat_message':
-                        addChatMsg(msg.text, '', msg.sender);
-                        break;
+                    case 'chat_message': addChatMsg(msg.text, '', msg.sender); break;
                     case 'request_snapshot': if(STATE.isDrawer) sendSnapshot(); break;
                     case 'canvas_snapshot':
                         if(!STATE.isDrawer&&msg.imageData) {
@@ -656,7 +630,9 @@
         function resetState() {
             clearInterval(STATE.timerInterval);
             STATE.gameActive=STATE.roundActive=false; STATE.isDrawer=false;
-            STATE.currentWord=''; guessInput.disabled=btnSubmitGuess.disabled=true;
+            STATE.currentWord=''; 
+            guessInput.disabled = true;
+            btnSubmitGuess.disabled = true;
             canvasWrapper.classList.remove('active-draw');
             wordHintDisplay.textContent=''; canvasOverlay.textContent='';
             updateScoreboard(); clearCanvas();
@@ -681,14 +657,20 @@
             const drawerIsP1 = STATE.currentRound%2===1;
             STATE.isDrawer = (drawerIsP1&&STATE.playerId==='player1') || (!drawerIsP1&&STATE.playerId==='player2');
             STATE.roundActive=true; STATE.timeLeft=STATE.roundTime; STATE.drawActions=[];
-            clearCanvas(); canvasWrapper.classList.toggle('active-draw', STATE.isDrawer);
-            guessInput.disabled = btnSubmitGuess.disabled = STATE.isDrawer;
-            if(STATE.isDrawer) {
+            clearCanvas(); 
+            canvasWrapper.classList.toggle('active-draw', STATE.isDrawer);
+            
+            // 关键修复：根据角色启用/禁用输入框
+            if (STATE.isDrawer) {
+                guessInput.disabled = true;
+                btnSubmitGuess.disabled = true;
                 STATE.currentWord=getRandomWord(); STATE.wordHint=getWordHint(STATE.currentWord);
                 wordHintDisplay.textContent='🎯 '+STATE.currentWord;
                 canvasOverlay.textContent='';
                 addChatMsg('🎨 轮到你画画！词：'+STATE.currentWord,'system');
             } else {
+                guessInput.disabled = false;
+                btnSubmitGuess.disabled = false;
                 STATE.currentWord=''; STATE.wordHint='';
                 wordHintDisplay.textContent='';
                 canvasOverlay.textContent='👀 猜词中';
@@ -705,13 +687,17 @@
             const drawerP1 = msg.drawer==='player1';
             STATE.isDrawer = (drawerP1&&STATE.playerId==='player1')||(!drawerP1&&STATE.playerId==='player2');
             canvasWrapper.classList.toggle('active-draw', STATE.isDrawer);
-            guessInput.disabled = btnSubmitGuess.disabled = STATE.isDrawer;
+            
             if(STATE.isDrawer) {
+                guessInput.disabled = true;
+                btnSubmitGuess.disabled = true;
                 if(!STATE.currentWord) STATE.currentWord=getRandomWord();
                 STATE.wordHint=getWordHint(STATE.currentWord);
                 wordHintDisplay.textContent='🎯 '+STATE.currentWord;
                 canvasOverlay.textContent='';
             } else {
+                guessInput.disabled = false;
+                btnSubmitGuess.disabled = false;
                 STATE.currentWord=''; wordHintDisplay.textContent='';
                 canvasOverlay.textContent='👀 猜词中'; guessInput.focus();
                 setTimeout(()=>sendMsg({type:'request_snapshot'}), 300);
@@ -731,7 +717,8 @@
         function endRound(wasCorrect) {
             clearInterval(STATE.timerInterval);
             STATE.roundActive=false; STATE.isDrawing=false;
-            guessInput.disabled=btnSubmitGuess.disabled=true;
+            guessInput.disabled = true;
+            btnSubmitGuess.disabled = true;
             canvasWrapper.classList.remove('active-draw');
             if(STATE.isDrawer&&!wasCorrect) addChatMsg('⏰ 时间到！答案是：'+STATE.currentWord,'system');
             sendMsg({type:'round_end', word:STATE.currentWord});
@@ -740,7 +727,8 @@
 
         function handleRoundEnd(msg) {
             clearInterval(STATE.timerInterval); STATE.roundActive=false;
-            guessInput.disabled=btnSubmitGuess.disabled=true;
+            guessInput.disabled = true;
+            btnSubmitGuess.disabled = true;
             canvasWrapper.classList.remove('active-draw');
             if(!STATE.isDrawer) canvasOverlay.textContent=msg.word||'';
             setTimeout(()=>{ if(STATE.gameActive) nextRound(); }, 2200);
@@ -750,7 +738,6 @@
             if(!STATE.roundActive||STATE.isDrawer) return;
             const g = guessInput.value.trim(); if(!g) return;
             guessInput.value = '';
-            // 发送给画家判断
             sendMsg({type:'guess_check', guess:g, sender:STATE.playerName});
             guessInput.focus();
         }
@@ -758,20 +745,22 @@
         function handleGuessCheck(msg) {
             if(!STATE.isDrawer||!STATE.roundActive) return;
             const correct = msg.guess === STATE.currentWord;
-            sendMsg({type:'guess_result', correct, sender:STATE.playerName});
             if(correct) {
                 STATE.opponentScore += Math.max(1, Math.floor(STATE.timeLeft/5));
                 updateScoreboard();
                 addChatMsg('🎉 对手猜对了！','correct');
+                sendMsg({type:'guess_result', correct:true});
                 endRound(true);
             } else {
                 addChatMsg(`💬 ${msg.sender}: "${msg.guess}"`, 'wrong');
+                sendMsg({type:'guess_result', correct:false});
             }
         }
 
         function endGame() {
             STATE.gameActive=false; clearInterval(STATE.timerInterval);
-            guessInput.disabled=btnSubmitGuess.disabled=true;
+            guessInput.disabled = true;
+            btnSubmitGuess.disabled = true;
             canvasWrapper.classList.remove('active-draw');
             const r = STATE.myScore>STATE.opponentScore?'🏆 你赢了！':(STATE.myScore<STATE.opponentScore?'😢 对手赢了！':'🤝 平局');
             addChatMsg(r+' 比分 '+STATE.myScore+':'+STATE.opponentScore,'system');
@@ -781,7 +770,8 @@
 
         function handleGameOver(msg) {
             STATE.gameActive=false; clearInterval(STATE.timerInterval);
-            guessInput.disabled=btnSubmitGuess.disabled=true;
+            guessInput.disabled = true;
+            btnSubmitGuess.disabled = true;
             canvasWrapper.classList.remove('active-draw');
         }
 
@@ -888,25 +878,6 @@
 
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('beforeunload', ()=>{ if(STATE.conn) STATE.conn.close(); if(STATE.peer) STATE.peer.destroy(); });
-
-        // 消息处理扩展
-        const origHandle = setupConn;
-        // 重新绑定消息处理，增加 guess_check 类型
-        const originalOnData = (conn) => {
-            conn.on('data', msg => {
-                if(msg.senderId===STATE.playerId) return;
-                if(msg.type==='guess_check') handleGuessCheck(msg);
-                // 其他消息已在上面 setupConn 中处理，为防重复，此处跳过
-            });
-        };
-        // 修改 setupConn 以整合新的消息处理
-        const oldSetupConn = setupConn;
-        setupConn = function(conn) {
-            oldSetupConn(conn);
-            conn.on('data', msg => {
-                if(msg.type==='guess_check') handleGuessCheck(msg);
-            });
-        };
 
         function init() {
             resizeCanvas(); clearCanvas(); setDrawStyle();
