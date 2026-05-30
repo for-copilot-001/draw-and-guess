@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🎨 你画我猜 - 跨设备对战 (增强连接)</title>
+    <title>🎨 你画我猜 - 跨设备对战 (修复版)</title>
     <!-- 引入 PeerJS 库 -->
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
@@ -510,7 +510,6 @@
         function replayDrawAction(a) { drawLine(a.nx1,a.ny1,a.nx2,a.ny2,a.color,a.size,a.tool); }
 
         // ==================== P2P 通信 (增强连接) ====================
-        // 添加 ICE 服务器配置，增强 NAT 穿透能力
         const ICE_SERVERS = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -518,7 +517,6 @@
                 { urls: 'stun:stun2.l.google.com:19302' },
                 { urls: 'stun:stun3.l.google.com:19302' },
                 { urls: 'stun:stun4.l.google.com:19302' },
-                // 免费 TURN 服务器（用于穿透对称 NAT）
                 {
                     urls: 'turn:openrelay.metered.ca:80',
                     username: 'openrelayproject',
@@ -542,7 +540,7 @@
         function setupPeerAsHost(roomId) {
             try {
                 STATE.peer = new Peer(roomId, {
-                    debug: 1,            // 开启调试日志，便于排查问题
+                    debug: 1,
                     config: ICE_SERVERS,
                 });
                 STATE.peer.on('open', (id) => {
@@ -552,8 +550,8 @@
                     addChatMessage('🏠 房间已创建，等待好友加入...', 'system');
                     showToast('房间号: ' + id);
                     STATE.peer.on('connection', (conn) => {
-                        if(STATE.conn) {
-                            conn.on('open',()=> conn.close());
+                        if (STATE.conn) {
+                            conn.on('open', () => conn.close());
                             return;
                         }
                         STATE.conn = conn;
@@ -562,20 +560,39 @@
                         updateScoreboard();
                         addChatMessage('🎉 好友已连接！游戏即将开始...', 'system');
                         showToast('好友已加入！');
-                        if(!STATE.gameActive) startNewGame();
+
+                        // ---- 修复点：确保连接真正打开后再开始游戏 ----
+                        function tryStartGame() {
+                            if (!STATE.gameActive) {
+                                startNewGame();
+                            }
+                        }
+                        if (conn.open) {
+                            tryStartGame();
+                        } else {
+                            conn.on('open', () => {
+                                tryStartGame();
+                            });
+                            // 超时保护：5秒后仍未打开则提示
+                            setTimeout(() => {
+                                if (!conn.open && !STATE.gameActive) {
+                                    showToast('⚠️ 连接建立缓慢，请尝试重新创建房间');
+                                }
+                            }, 5000);
+                        }
                     });
                 });
                 STATE.peer.on('error', (err) => {
                     console.error('Peer error:', err);
-                    if(err.type === 'unavailable-id') {
+                    if (err.type === 'unavailable-id') {
                         showToast('该房间号已被占用，请重新创建');
-                    } else if(err.type === 'peer-unavailable') {
+                    } else if (err.type === 'peer-unavailable') {
                         showToast('对方不在线或房间号错误');
                     } else {
                         showToast('⚠️ 连接错误: ' + err.message);
                     }
                 });
-            } catch(e) {
+            } catch (e) {
                 showToast('❌ 创建房间失败，请重试');
                 console.error(e);
             }
