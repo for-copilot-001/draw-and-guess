@@ -3,472 +3,537 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>🎨 你画我猜 - 跨设备对战 (修复版)</title>
-    <!-- 引入 PeerJS 库 -->
+    <title>🎨 你画我猜 · 全屏对战</title>
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
     <style>
         :root {
-            --bg: #1a1a2e;
-            --surface: #16213e;
-            --surface2: #0f3460;
-            --primary: #e94560;
-            --accent: #f5c518;
-            --text: #eee;
-            --text2: #b0b0c0;
-            --success: #4caf84;
-            --radius: 16px;
-            --shadow: 0 8px 32px rgba(0,0,0,0.4);
-            --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+            --bg: #0b0b1a;
+            --surface: #12122a;
+            --surface2: #1e1e42;
+            --primary: #ff4d6d;
+            --accent: #ffd166;
+            --text: #f0f0f8;
+            --text2: #a0a0c0;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --radius: 20px;
+            --transition: 0.2s ease;
         }
-        * { margin:0; padding:0; box-sizing:border-box; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
             background: var(--bg);
-            background-image: radial-gradient(ellipse at 20% 20%, rgba(233,68,96,0.08) 0%, transparent 60%),
-                            radial-gradient(ellipse at 80% 70%, rgba(15,52,96,0.3) 0%, transparent 60%),
-                            radial-gradient(ellipse at 50% 50%, rgba(245,197,24,0.04) 0%, transparent 70%);
-            min-height: 100vh;
+            height: 100vh;
+            height: -webkit-fill-available;
             display: flex;
-            align-items: center;
             justify-content: center;
-            padding: 12px;
+            align-items: center;
             color: var(--text);
             user-select: none;
             -webkit-tap-highlight-color: transparent;
-            -webkit-user-select: none;
+            overflow: hidden;
         }
+
         .game-container {
             width: 100%;
-            max-width: 900px;
-            background: var(--surface);
-            border-radius: 24px;
-            box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,0.05);
-            overflow: hidden;
+            max-width: 500px;
+            height: 100vh;
+            height: -webkit-fill-available;
             display: flex;
             flex-direction: column;
-            backdrop-filter: blur(10px);
+            background: var(--surface);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+            position: relative;
         }
-        .game-header {
+
+        /* 顶部状态栏 */
+        .top-bar {
+            padding: 10px 16px;
+            background: var(--surface2);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 14px 18px;
-            background: var(--surface2);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            flex-wrap: wrap;
             gap: 10px;
+            flex-shrink: 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            z-index: 10;
         }
-        .game-logo {
-            font-size: 1.4rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(135deg, #f5c518, #ff6b6b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .game-logo .icon { font-size:1.7rem; -webkit-text-fill-color: initial; }
         .room-info {
             display: flex;
             align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .room-badge {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.15);
-            padding: 7px 14px;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
             gap: 6px;
-            transition: var(--transition);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
             cursor: pointer;
+        }
+        .room-info .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            margin-right: 4px;
+        }
+        .btn-sm {
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
             white-space: nowrap;
-            letter-spacing: 0.3px;
         }
-        .room-badge:hover { background: rgba(255,255,255,0.12); border-color: var(--accent); }
-        .room-badge .dot {
-            width: 9px; height: 9px; border-radius: 50%;
-            background: var(--success); animation: pulse-dot 2s infinite;
+        .btn-sm:active {
+            background: var(--primary);
+            border-color: var(--primary);
         }
-        @keyframes pulse-dot {
-            0%,100%{ box-shadow:0 0 0 0 rgba(76,175,132,0.6); }
-            50%{ box-shadow:0 0 0 12px rgba(76,175,132,0); }
-        }
-        .btn {
-            padding: 8px 16px; border-radius: 30px; border: none; cursor: pointer;
-            font-weight: 600; font-size: 0.85rem; letter-spacing: 0.3px;
-            transition: var(--transition); display: flex; align-items: center;
-            gap: 5px; white-space: nowrap; font-family: inherit;
-        }
-        .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 16px rgba(233,68,96,0.35); }
-        .btn-primary:hover { background: #ff5a7a; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(233,68,96,0.5); }
-        .btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.25); color: var(--text); }
-        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-        .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 20px; }
-        .btn:active { transform: scale(0.95); transition: 0.1s; }
 
-        .game-main {
-            display: flex; gap: 0; flex-wrap: wrap;
+        /* 画板全屏区域 */
+        .canvas-container {
+            flex: 1 1 auto;
+            position: relative;
+            background: #fff;
+            margin: 0;
+            border-bottom: 3px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            touch-action: none;
+            cursor: crosshair;
+            min-height: 0;
         }
-        .canvas-section {
-            flex: 1 1 400px; min-width: 300px; padding: 14px;
-            display: flex; flex-direction: column; gap: 8px; align-items: center;
+        .canvas-container.active-draw {
+            border-bottom-color: var(--accent);
+            box-shadow: inset 0 0 20px rgba(255, 209, 102, 0.2);
         }
-        .canvas-wrapper {
-            position: relative; width: 100%; aspect-ratio: 4/3; max-height: 55vh;
-            background: #fff; border-radius: var(--radius); overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3); cursor: crosshair;
-            touch-action: none; border: 3px solid rgba(255,255,255,0.1);
-            transition: border-color var(--transition);
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
-        .canvas-wrapper.active-draw {
-            border-color: var(--accent);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 30px rgba(245,197,24,0.2);
-        }
-        .canvas-wrapper canvas { display: block; width: 100%; height: 100%; }
         .canvas-overlay {
-            position: absolute; inset:0; display:flex; align-items:center; justify-content:center;
-            pointer-events:none; font-size:2rem; font-weight:800; color:rgba(0,0,0,0.12);
-            letter-spacing:4px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: rgba(0, 0, 0, 0.15);
+            pointer-events: none;
+            letter-spacing: 4px;
         }
-        .word-display {
-            text-align: center; font-weight: 700; font-size: 1.1rem; min-height: 2rem;
-            letter-spacing: 3px; color: var(--accent); background: rgba(0,0,0,0.3);
-            padding: 6px 14px; border-radius: 20px; animation: fadeInUp 0.3s ease;
-        }
-        @keyframes fadeInUp {
-            from{ opacity:0; transform:translateY(10px); }
-            to{ opacity:1; transform:translateY(0); }
+        .word-hint {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--accent);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
         }
 
-        .sidebar {
-            flex: 0 0 260px; padding: 14px; display: flex; flex-direction: column; gap: 10px;
-            border-left: 1px solid rgba(255,255,255,0.06); max-height: 65vh; overflow-y: auto;
+        /* 底部滑动区域 */
+        .bottom-panel {
+            flex-shrink: 0;
+            max-height: 35vh;
+            overflow-y: auto;
+            background: var(--surface);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            -webkit-overflow-scrolling: touch;
         }
-        .sidebar h3 {
-            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px;
-            color: var(--text2); text-align: center;
-        }
-        .chat-box { flex:1; display:flex; flex-direction:column; gap:6px; min-height:100px; }
-        .chat-messages {
-            flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:5px;
-            padding:8px; background:rgba(0,0,0,0.2); border-radius:12px; max-height:160px;
-            font-size:0.8rem; scroll-behavior:smooth;
-        }
-        .chat-msg { padding:5px 9px; border-radius:10px; animation:fadeInUp 0.2s ease; word-break:break-word; }
-        .chat-msg.system { background:rgba(255,255,255,0.04); color:var(--text2); font-style:italic; font-size:0.75rem; text-align:center; }
-        .chat-msg.correct { background:rgba(76,175,132,0.2); color:#7df0b0; font-weight:700; animation:popIn 0.4s ease; }
-        .chat-msg.wrong { background:rgba(233,68,96,0.15); color:#ff8a9e; }
-        @keyframes popIn {
-            0%{ transform:scale(0.8); opacity:0; } 60%{ transform:scale(1.05); } 100%{ transform:scale(1); opacity:1; }
-        }
-        .guess-input-row { display:flex; gap:8px; }
-        .guess-input-row input {
-            flex:1; padding:10px 14px; border-radius:25px; border:2px solid rgba(255,255,255,0.2);
-            background:rgba(0,0,0,0.3); color:#fff; font-size:0.9rem; font-family:inherit;
-            transition:var(--transition); min-width:0;
-        }
-        .guess-input-row input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 20px rgba(245,197,24,0.15); }
-        .guess-input-row input:disabled { opacity:0.4; cursor:not-allowed; }
 
-        .scoreboard { display:flex; gap:10px; justify-content:center; }
+        .score-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
         .score-card {
-            background:rgba(0,0,0,0.25); border-radius:14px; padding:8px 14px; text-align:center;
-            min-width:65px; transition:var(--transition); border:2px solid transparent;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 14px;
+            padding: 8px 16px;
+            text-align: center;
+            min-width: 70px;
+            border: 2px solid transparent;
+            transition: var(--transition);
         }
-        .score-card.active-turn { border-color:var(--accent); box-shadow:0 0 20px rgba(245,197,24,0.3); animation:glowPulse 1.5s infinite; }
-        @keyframes glowPulse {
-            0%,100%{ box-shadow:0 0 15px rgba(245,197,24,0.25); } 50%{ box-shadow:0 0 30px rgba(245,197,24,0.55); }
+        .score-card.active-turn {
+            border-color: var(--accent);
+            box-shadow: 0 0 14px rgba(255, 209, 102, 0.4);
         }
-        .score-card .name { font-weight:700; font-size:0.8rem; color:var(--text2); }
-        .score-card .points { font-size:1.4rem; font-weight:800; color:var(--accent); }
-        .role-badge { font-size:0.65rem; padding:3px 8px; border-radius:10px; display:inline-block; margin-top:2px; font-weight:600; }
-        .role-drawer { background:rgba(233,68,96,0.3); color:#ff8a9e; }
-        .role-guesser { background:rgba(76,175,132,0.3); color:#7df0b0; }
+        .score-card .name {
+            font-size: 0.7rem;
+            color: var(--text2);
+        }
+        .score-card .points {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+        .role-badge {
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            display: inline-block;
+        }
 
-        .timer-bar { height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; margin:0 14px; }
-        .timer-fill {
-            height:100%; background:linear-gradient(90deg, var(--success), var(--accent), var(--primary));
-            border-radius:3px; transition:width 1s linear; width:100%;
+        .answer-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
-        .timer-fill.warning { background:linear-gradient(90deg, #ff6b6b, #e94560); animation:urgentPulse 0.6s infinite; }
-        @keyframes urgentPulse { 0%,100%{ opacity:1; } 50%{ opacity:0.5; } }
+        .answer-row input {
+            flex: 1;
+            padding: 12px 14px;
+            border-radius: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+            color: #fff;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        .answer-row input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .btn-submit {
+            background: var(--primary);
+            border: none;
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 30px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        .btn-submit:active {
+            transform: scale(0.95);
+        }
+        .btn-submit:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
 
-        .tools-row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; justify-content:center; padding:2px 0; }
-        .tool-btn {
-            width:34px; height:34px; border-radius:50%; border:3px solid transparent; cursor:pointer;
-            transition:var(--transition); display:flex; align-items:center; justify-content:center;
-            font-size:1rem; background:rgba(255,255,255,0.06); color:var(--text); flex-shrink:0;
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 4px;
         }
-        .tool-btn:hover { background:rgba(255,255,255,0.15); transform:scale(1.08); }
-        .tool-btn.active { border-color:var(--accent); background:rgba(245,197,24,0.15); box-shadow:0 0 16px rgba(245,197,24,0.3); }
-        .color-dot {
-            width:22px; height:22px; border-radius:50%; border:2px solid rgba(255,255,255,0.4);
-            cursor:pointer; transition:var(--transition); flex-shrink:0;
+        .chat-messages {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 8px;
+            height: 90px;
+            overflow-y: auto;
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
-        .color-dot:hover { transform:scale(1.2); border-color:#fff; }
-        .color-dot.active { border-color:#fff; box-shadow:0 0 14px currentColor; transform:scale(1.2); }
-        .size-slider {
-            -webkit-appearance:none; width:60px; height:6px; border-radius:3px;
-            background:rgba(255,255,255,0.2); outline:none; cursor:pointer;
+        .chat-msg {
+            padding: 4px 8px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            word-break: break-word;
         }
-        .size-slider::-webkit-slider-thumb {
-            -webkit-appearance:none; width:20px; height:20px; border-radius:50%;
-            background:#fff; cursor:pointer; border:3px solid var(--accent);
-            box-shadow:0 2px 8px rgba(0,0,0,0.3);
+        .chat-msg.system {
+            text-align: center;
+            color: var(--text2);
+            font-style: italic;
+            background: transparent;
+        }
+        .chat-msg.correct {
+            background: rgba(46, 204, 113, 0.2);
+            color: #7bed9f;
+            font-weight: 700;
+        }
+        .chat-msg.wrong {
+            background: rgba(231, 76, 60, 0.2);
+            color: #ff7675;
+        }
+        .chat-input-row {
+            display: flex;
+            gap: 8px;
+        }
+        .chat-input-row input {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 0.85rem;
+        }
+        .btn-chat {
+            background: var(--surface2);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+            white-space: nowrap;
         }
 
         .modal-overlay {
-            position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100;
-            display:flex; align-items:center; justify-content:center;
-            backdrop-filter:blur(4px); animation:fadeIn 0.3s ease;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
         }
-        @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
         .modal {
-            background:var(--surface); border-radius:20px; padding:24px; max-width:400px;
-            width:90%; box-shadow:0 20px 50px rgba(0,0,0,0.6); text-align:center;
-            display:flex; flex-direction:column; gap:14px; animation:slideUp 0.35s ease;
-        }
-        @keyframes slideUp { from{transform:translateY(40px);opacity:0;} to{transform:translateY(0);opacity:1;} }
-        .modal h2 { font-size:1.3rem; letter-spacing:-0.3px; }
-        .modal p { color:var(--text2); font-size:0.85rem; line-height:1.5; }
-        .modal .code-display {
-            font-size:2.5rem; font-weight:900; letter-spacing:10px; color:var(--accent);
-            background:rgba(0,0,0,0.35); padding:14px 20px; border-radius:16px;
-            border:2px dashed rgba(245,197,24,0.4); font-family:'SF Mono','Consolas','Menlo',monospace;
+            background: var(--surface);
+            padding: 24px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 360px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
         .modal input {
-            padding:10px 14px; border-radius:25px; border:2px solid rgba(255,255,255,0.25);
-            background:rgba(0,0,0,0.3); color:#fff; font-size:1rem; text-align:center;
-            letter-spacing:6px; font-family:'SF Mono','Consolas','Menlo',monospace;
-            font-weight:700; transition:var(--transition);
+            padding: 12px;
+            border-radius: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            text-align: center;
+            font-size: 1rem;
+            letter-spacing: 4px;
+            font-weight: 700;
         }
-        .modal input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 20px rgba(245,197,24,0.2); }
-        .modal .btn-row { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+        .modal .btn-primary {
+            background: var(--primary);
+            border: none;
+            padding: 12px;
+            border-radius: 30px;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1rem;
+        }
 
         .toast {
-            position:fixed; top:20px; left:50%; transform:translateX(-50%);
-            background:var(--surface2); color:#fff; padding:10px 20px; border-radius:30px;
-            font-weight:600; z-index:200; box-shadow:0 10px 30px rgba(0,0,0,0.5);
-            animation:toastIn 0.35s ease, toastOut 0.35s ease 2.2s forwards;
-            pointer-events:none; font-size:0.85rem; border:1px solid rgba(255,255,255,0.2);
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #222;
+            color: #fff;
+            padding: 10px 22px;
+            border-radius: 30px;
+            font-weight: 600;
+            z-index: 200;
+            animation: toastIn 0.3s ease;
         }
-        @keyframes toastIn { from{ transform:translateX(-50%) translateY(-40px); opacity:0; } to{ transform:translateX(-50%) translateY(0); opacity:1; } }
-        @keyframes toastOut { from{ opacity:1; } to{ opacity:0; transform:translateX(-50%) translateY(-20px); } }
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        .hidden {
+            display: none !important;
+        }
 
-        @media (max-width: 700px) {
-            .game-main { flex-direction:column; }
-            .sidebar { flex:0 0 auto; border-left:none; border-top:1px solid rgba(255,255,255,0.06); max-height:none; padding:10px; }
-            .canvas-section { padding:8px; min-width:auto; }
-            .canvas-wrapper { aspect-ratio:1/1; max-height:40vh; }
-            .game-header { padding:8px 12px; gap:6px; }
-            .game-logo { font-size:1.1rem; }
-            .btn { font-size:0.75rem; padding:6px 12px; }
-            .tool-btn { width:30px; height:30px; font-size:0.8rem; }
-            .color-dot { width:18px; height:18px; }
-            .modal { padding:18px; }
-            .modal .code-display { font-size:1.8rem; letter-spacing:6px; padding:10px 14px; }
+        .tools-mini {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 6px;
+            border-radius: 30px;
+            backdrop-filter: blur(6px);
         }
-        .hidden { display:none !important; }
+        .tools-mini button,
+        .tools-mini .color-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            background: rgba(255, 255, 255, 0.15);
+            cursor: pointer;
+            color: #fff;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tools-mini .active {
+            border-color: var(--accent);
+            background: rgba(255, 209, 102, 0.3);
+        }
+        .color-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+        }
+        .size-slider {
+            -webkit-appearance: none;
+            width: 50px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            outline: none;
+        }
     </style>
 </head>
 <body>
     <div class="game-container" id="gameContainer">
-        <!-- Header -->
-        <div class="game-header">
-            <div class="game-logo"><span class="icon">🎨</span> 你画我猜</div>
-            <div class="room-info">
-                <span class="room-badge" id="roomBadge" title="点击复制房间号">
-                    <span class="dot"></span> 房间: <strong id="roomCodeDisplay">----</strong>
-                </span>
-                <button class="btn btn-outline btn-sm" id="btnCopyInvite">📋 邀请</button>
-                <button class="btn btn-outline btn-sm" id="btnLeaveRoom">🚪 离开</button>
+        <!-- 顶部状态 -->
+        <div class="top-bar">
+            <div class="room-info" id="roomBadge"><span class="dot"></span> 房间:<strong id="roomCodeDisplay">----</strong></div>
+            <button class="btn-sm" id="btnCopyInvite">📋 邀请</button>
+            <button class="btn-sm" id="btnLeaveRoom">🚪 离开</button>
+        </div>
+
+        <!-- 全屏画板 -->
+        <div class="canvas-container" id="canvasWrapper">
+            <canvas id="drawCanvas"></canvas>
+            <div class="canvas-overlay" id="canvasOverlay"></div>
+            <div class="word-hint" id="wordHintDisplay"></div>
+            <div class="tools-mini" id="toolsMini">
+                <button data-tool="pen" class="active">✏️</button>
+                <button data-tool="eraser">🧹</button>
+                <button data-tool="clear">🗑️</button>
+                <span class="color-dot active" data-color="#1a1a1a" style="background:#1a1a1a;"></span>
+                <span class="color-dot" data-color="#e94560" style="background:#e94560;"></span>
+                <span class="color-dot" data-color="#3b82f6" style="background:#3b82f6;"></span>
+                <span class="color-dot" data-color="#10b981" style="background:#10b981;"></span>
+                <input type="color" id="customColor" value="#1a1a1a" style="width:26px;height:26px;border-radius:50%;padding:0;border:2px solid rgba(255,255,255,0.4);background:transparent;">
+                <input type="range" class="size-slider" id="brushSize" min="1" max="15" value="3">
             </div>
         </div>
 
-        <!-- Timer -->
-        <div class="timer-bar" id="timerBarContainer"><div class="timer-fill" id="timerFill"></div></div>
-
-        <!-- Main -->
-        <div class="game-main">
-            <div class="canvas-section">
-                <div class="canvas-wrapper" id="canvasWrapper">
-                    <canvas id="drawCanvas"></canvas>
-                    <div class="canvas-overlay" id="canvasOverlay"></div>
-                </div>
-                <div class="word-display" id="wordDisplay"></div>
-                <div class="tools-row" id="toolsRow">
-                    <button class="tool-btn active" data-tool="pen" title="画笔">✏️</button>
-                    <button class="tool-btn" data-tool="eraser" title="橡皮擦">🧹</button>
-                    <button class="tool-btn" data-tool="clear" title="清空画布">🗑️</button>
-                    <span style="color:var(--text2);font-size:0.7rem;margin:0 2px;">|</span>
-                    <span class="color-dot active" data-color="#1a1a1a" style="background:#1a1a1a;" title="黑色"></span>
-                    <span class="color-dot" data-color="#e94560" style="background:#e94560;" title="红色"></span>
-                    <span class="color-dot" data-color="#3b82f6" style="background:#3b82f6;" title="蓝色"></span>
-                    <span class="color-dot" data-color="#10b981" style="background:#10b981;" title="绿色"></span>
-                    <span class="color-dot" data-color="#f59e0b" style="background:#f59e0b;" title="橙色"></span>
-                    <span class="color-dot" data-color="#8b5cf6" style="background:#8b5cf6;" title="紫色"></span>
-                    <span class="color-dot" data-color="#ec4899" style="background:#ec4899;" title="粉色"></span>
-                    <input type="color" id="customColor" value="#1a1a1a" style="width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);cursor:pointer;background:transparent;flex-shrink:0;" title="自定义颜色">
-                    <span style="color:var(--text2);font-size:0.7rem;margin:0 2px;">|</span>
-                    <span style="font-size:0.65rem;color:var(--text2);">粗细</span>
-                    <input type="range" class="size-slider" id="brushSize" min="1" max="20" value="3" title="画笔粗细">
-                </div>
+        <!-- 底部滑动区 -->
+        <div class="bottom-panel" id="bottomPanel">
+            <div class="score-row" id="scoreboard">
+                <div class="score-card" id="scoreCard1"><div class="name">👤 你</div><div class="points">0</div><div class="role-badge">准备</div></div>
+                <div class="score-card" id="scoreCard2"><div class="name">👤 对手</div><div class="points">0</div><div class="role-badge">准备</div></div>
             </div>
 
-            <div class="sidebar">
-                <h3>💬 猜词区</h3>
-                <div class="scoreboard" id="scoreboard">
-                    <div class="score-card" id="scoreCard1"><div class="name">👤 你</div><div class="points">0</div><div class="role-badge role-guesser">等待中</div></div>
-                    <div class="score-card" id="scoreCard2"><div class="name">👤 对手</div><div class="points">0</div><div class="role-badge role-guesser">等待中</div></div>
-                </div>
-                <div class="chat-box">
-                    <div class="chat-messages" id="chatMessages"><div class="chat-msg system">👋 欢迎！创建房间或输入房间号加入好友对战。</div></div>
-                    <div class="guess-input-row">
-                        <input type="text" id="guessInput" placeholder="输入猜测..." disabled maxlength="20">
-                        <button class="btn btn-primary btn-sm" id="btnSendGuess" disabled>发送</button>
-                    </div>
+            <div class="answer-row">
+                <input type="text" id="guessInput" placeholder="✏️ 输入你的答案..." disabled maxlength="20">
+                <button class="btn-submit" id="btnSubmitGuess" disabled>提交答案</button>
+            </div>
+
+            <div class="chat-section">
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input-row">
+                    <input type="text" id="chatInput" placeholder="💬 发送消息..." maxlength="50">
+                    <button class="btn-chat" id="btnSendChat">发送</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Room Setup -->
+    <!-- 房间弹窗 -->
     <div class="modal-overlay" id="modalOverlay">
-        <div class="modal" id="setupModal">
-            <h2>🎮 跨设备对战</h2>
-            <p>创建房间后将房间号发送给好友，对方在手机/电脑浏览器打开即可加入</p>
-            <button class="btn btn-primary" id="btnCreateRoom" style="justify-content:center;font-size:1rem;padding:12px;">
-                ✨ 创建房间
-            </button>
-            <div style="display:flex;align-items:center;gap:8px;color:var(--text2);font-size:0.75rem;">
-                <span style="flex:1;height:1px;background:rgba(255,255,255,0.1);"></span> 或加入已有房间 <span style="flex:1;height:1px;background:rgba(255,255,255,0.1);"></span>
-            </div>
-            <input type="text" id="joinRoomInput" placeholder="输入房间号" maxlength="20" style="letter-spacing:4px;font-size:1.1rem;">
-            <button class="btn btn-outline" id="btnJoinRoom" style="justify-content:center;">🔗 加入房间</button>
-            <p style="font-size:0.7rem;color:var(--text2);">💡 提示：房间号会出现在房主屏幕顶部，对方输入即可连接。网络使用P2P直连，延迟极低。</p>
+        <div class="modal">
+            <h2>🎮 加入或创建房间</h2>
+            <button class="btn-primary" id="btnCreateRoom">✨ 创建房间</button>
+            <div style="display:flex;align-items:center;gap:8px;color:var(--text2);"><span style="flex:1;height:1px;background:rgba(255,255,255,0.1);"></span> 或 <span style="flex:1;height:1px;background:rgba(255,255,255,0.1);"></span></div>
+            <input type="text" id="joinRoomInput" placeholder="输入房间号" maxlength="20">
+            <button class="btn-primary" id="btnJoinRoom" style="background:var(--surface2);">🔗 加入房间</button>
         </div>
     </div>
-
-    <!-- Toast container -->
     <div id="toastContainer"></div>
 
     <script>
     (function() {
-        // ==================== DOM 引用 ====================
-        const $ = (sel) => document.querySelector(sel);
-        const $$ = (sel) => document.querySelectorAll(sel);
+        const $ = (s) => document.querySelector(s);
         const canvas = $('#drawCanvas');
         const ctx = canvas.getContext('2d');
         const canvasWrapper = $('#canvasWrapper');
         const canvasOverlay = $('#canvasOverlay');
-        const wordDisplay = $('#wordDisplay');
-        const chatMessages = $('#chatMessages');
+        const wordHintDisplay = $('#wordHintDisplay');
         const guessInput = $('#guessInput');
-        const btnSendGuess = $('#btnSendGuess');
-        const timerFill = $('#timerFill');
-        const roomBadge = $('#roomBadge');
+        const btnSubmitGuess = $('#btnSubmitGuess');
+        const chatInput = $('#chatInput');
+        const btnSendChat = $('#btnSendChat');
+        const chatMessages = $('#chatMessages');
         const roomCodeDisplay = $('#roomCodeDisplay');
-        const btnCopyInvite = $('#btnCopyInvite');
-        const btnLeaveRoom = $('#btnLeaveRoom');
-        const toolsRow = $('#toolsRow');
+        const toolsMini = $('#toolsMini');
+        const brushSizeInput = $('#brushSize');
+        const customColorInput = $('#customColor');
         const scoreCard1 = $('#scoreCard1');
         const scoreCard2 = $('#scoreCard2');
         const modalOverlay = $('#modalOverlay');
-        const btnCreateRoom = $('#btnCreateRoom');
-        const btnJoinRoom = $('#btnJoinRoom');
-        const joinRoomInput = $('#joinRoomInput');
-        const brushSizeInput = $('#brushSize');
-        const customColorInput = $('#customColor');
-        const toastContainer = $('#toastContainer');
 
-        // ==================== 游戏状态 ====================
-        const STATE = {
-            roomCode: null,
-            playerId: null,       // 'player1' | 'player2'
-            playerName: '',
-            opponentName: '对手',
-            myScore: 0,
-            opponentScore: 0,
-            isDrawer: false,
-            currentWord: '',
-            wordHint: '',
-            roundTime: 60,
-            timeLeft: 60,
-            timerInterval: null,
-            gameActive: false,
-            roundActive: false,
-            totalRounds: 6,
-            currentRound: 0,
-            peer: null,           // PeerJS 实例
-            conn: null,           // DataConnection 实例
-            tool: 'pen',
-            color: '#1a1a1a',
-            brushSize: 3,
-            isDrawing: false,
-            lastX: 0, lastY: 0,
-            drawActions: [],
-            initialized: false,
+        const ICE_SERVERS = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
+            ]
         };
 
-        // ==================== 词语库 ====================
         const WORD_BANK = [
-            '猫','狗','兔子','老虎','熊猫','长颈鹿','企鹅','鳄鱼','蝴蝶','蜗牛',
-            '鲨鱼','鹦鹉','恐龙','螃蟹','天鹅','蜜蜂','大象','猴子','蛇','金鱼',
-            '汉堡','披萨','冰淇淋','西瓜','草莓','蛋糕','饺子','面条','火锅','棒棒糖',
-            '巧克力','爆米花','寿司','甜甜圈','月饼','粽子','薯条','饼干','棉花糖','烤串',
-            '雨伞','眼镜','手机','自行车','气球','钢琴','火箭','书包','台灯','剪刀',
-            '相机','闹钟','帽子','钥匙','蜡烛','风扇','沙发','镜子','雨靴','风筝',
-            '医生','警察','厨师','画家','宇航员','消防员','老师','歌手','魔术师','科学家',
-            '太阳','月亮','彩虹','闪电','雪花','火山','瀑布','星星','龙卷风','花朵',
-            '游泳','跳舞','睡觉','跑步','飞翔','唱歌','拥抱','钓鱼','打球','骑马',
+            '猫','狗','兔子','老虎','熊猫','长颈鹿','企鹅','鳄鱼','蝴蝶','蜗牛','汉堡','披萨','冰淇淋','西瓜','蛋糕','饺子','面条','火锅','棒棒糖','雨伞','眼镜','手机','自行车','气球','钢琴','火箭','书包','台灯','剪刀','医生','警察','厨师','太阳','月亮','彩虹','闪电','雪花','火山','瀑布','游泳','跳舞','睡觉','跑步'
         ];
 
-        function getRandomWord() { return WORD_BANK[Math.floor(Math.random() * WORD_BANK.length)]; }
-        function getWordHint(word) { return word.split('').map(() => '_').join(' '); }
+        const STATE = {
+            roomCode: null, playerId: null, playerName: '你', opponentName: '对手',
+            myScore: 0, opponentScore: 0, isDrawer: false, currentWord: '', wordHint: '',
+            roundTime: 50, timeLeft: 50, timerInterval: null,
+            gameActive: false, roundActive: false, totalRounds: 6, currentRound: 0,
+            peer: null, conn: null,
+            tool: 'pen', color: '#1a1a1a', brushSize: 3, isDrawing: false, lastX:0, lastY:0,
+            drawActions: []
+        };
 
-        // ==================== 音效 ====================
-        function playBeep(freq, dur, type='sine', vol=0.06) {
-            try {
-                const ctx = new (window.AudioContext||window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime);
-                gain.gain.setValueAtTime(vol, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+dur);
-                osc.connect(gain); gain.connect(ctx.destination);
-                osc.start(); osc.stop(ctx.currentTime+dur);
-            } catch(e){}
-        }
-        function sfxCorrect(){ playBeep(880,0.15,'square',0.1); setTimeout(()=>playBeep(1100,0.2,'square',0.1),150); }
-        function sfxWrong(){ playBeep(200,0.2,'sawtooth',0.06); }
-        function sfxTick(){ playBeep(600,0.05,'sine',0.03); }
-        function sfxRoundStart(){ playBeep(523,0.1,'triangle',0.07); setTimeout(()=>playBeep(659,0.12,'triangle',0.07),120); }
-        function sfxGameOver(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playBeep(f,0.2,'triangle',0.09),i*150)); }
+        function getRandomWord() { return WORD_BANK[Math.floor(Math.random()*WORD_BANK.length)]; }
+        function getWordHint(w) { return w.split('').map(()=>'_').join(' '); }
 
-        // ==================== Toast ====================
-        function showToast(msg, dur=2500) {
+        function showToast(msg) {
             const el = document.createElement('div'); el.className='toast'; el.textContent=msg;
-            toastContainer.appendChild(el); setTimeout(()=>el.remove(), dur+400);
+            document.body.appendChild(el); setTimeout(()=>el.remove(), 2200);
         }
 
-        // ==================== 聊天 ====================
-        function addChatMessage(text, type='system', playerTag='') {
-            const el = document.createElement('div'); el.className=`chat-msg ${type}`;
-            if(playerTag) el.innerHTML = `<span class="player-tag">${playerTag}</span>${text}`;
-            else el.textContent = text;
-            chatMessages.appendChild(el);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+        function addChatMsg(text, cls='', tag='') {
+            const el = document.createElement('div'); el.className=`chat-msg ${cls}`;
+            el.innerHTML = tag ? `<b>${tag}</b> ${text}` : text;
+            chatMessages.appendChild(el); chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        // ==================== Canvas ====================
         function resizeCanvas() {
             const rect = canvasWrapper.getBoundingClientRect();
             const dpr = Math.min(window.devicePixelRatio||1, 2);
@@ -478,567 +543,376 @@
                 ctx.lineCap='round'; ctx.lineJoin='round';
             }
         }
-        function clearCanvas() {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
-        }
-        function initCanvas() { resizeCanvas(); clearCanvas(); ctx.lineCap='round'; ctx.lineJoin='round'; }
+        function clearCanvas() { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#fff'; ctx.fillRect(0,0,canvas.width,canvas.height); }
 
-        // ==================== 绘制 ====================
         function setDrawStyle() {
-            if(STATE.tool==='eraser') { ctx.strokeStyle='#ffffff'; ctx.lineWidth=STATE.brushSize*3; }
-            else { ctx.strokeStyle=STATE.color; ctx.lineWidth=STATE.brushSize; }
+            ctx.strokeStyle = STATE.tool==='eraser'?'#fff':STATE.color;
+            ctx.lineWidth = STATE.tool==='eraser'?STATE.brushSize*3:STATE.brushSize;
             ctx.lineCap='round'; ctx.lineJoin='round';
         }
-        function getCanvasPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            return { x: Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width)), y: Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height)) };
+
+        function getPos(e) {
+            const r = canvas.getBoundingClientRect();
+            return { x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)), y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height)) };
         }
-        function getCanvasPosTouch(e) {
-            const rect = canvas.getBoundingClientRect();
+        function getTouchPos(e) {
+            const r = canvas.getBoundingClientRect();
             const t = e.touches[0];
-            return { x: Math.max(0,Math.min(1,(t.clientX-rect.left)/rect.width)), y: Math.max(0,Math.min(1,(t.clientY-rect.top)/rect.height)) };
+            return { x:Math.max(0,Math.min(1,(t.clientX-r.left)/r.width)), y:Math.max(0,Math.min(1,(t.clientY-r.top)/r.height)) };
         }
+
         function drawLine(nx1,ny1,nx2,ny2,color,size,tool) {
-            const rect = canvas.getBoundingClientRect();
-            const x1=nx1*rect.width, y1=ny1*rect.height, x2=nx2*rect.width, y2=ny2*rect.height;
+            const r = canvas.getBoundingClientRect();
+            const x1=nx1*r.width, y1=ny1*r.height, x2=nx2*r.width, y2=ny2*r.height;
             ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2);
-            ctx.strokeStyle = tool==='eraser'?'#ffffff':color;
+            ctx.strokeStyle = tool==='eraser'?'#fff':color;
             ctx.lineWidth = tool==='eraser'?size*3:size;
-            ctx.lineCap='round'; ctx.lineJoin='round'; ctx.stroke();
+            ctx.stroke();
         }
-        function replayDrawAction(a) { drawLine(a.nx1,a.ny1,a.nx2,a.ny2,a.color,a.size,a.tool); }
+        function replayAction(a) { drawLine(a.nx1,a.ny1,a.nx2,a.ny2,a.color,a.size,a.tool); }
 
-        // ==================== P2P 通信 (增强连接) ====================
-        const ICE_SERVERS = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'stun:stun3.l.google.com:19302' },
-                { urls: 'stun:stun4.l.google.com:19302' },
-                {
-                    urls: 'turn:openrelay.metered.ca:80',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: 'turn:openrelay.metered.ca:443',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                }
-            ]
-        };
+        function sendMsg(msg) { if(STATE.conn&&STATE.conn.open) STATE.conn.send(msg); }
 
-        function sendMessage(msg) {
-            if(STATE.conn && STATE.conn.open) {
-                try { STATE.conn.send(msg); } catch(e) { console.warn('Send failed', e); }
-            }
-        }
-        function broadcastDrawAction(action) { sendMessage({ type:'draw_action', action }); }
+        function broadcastDraw(action) { sendMsg({type:'draw_action', action}); }
 
-        function setupPeerAsHost(roomId) {
-            try {
-                STATE.peer = new Peer(roomId, {
-                    debug: 1,
-                    config: ICE_SERVERS,
+        function setupHost(roomId) {
+            STATE.peer = new Peer(roomId, { debug:1, config:ICE_SERVERS });
+            STATE.peer.on('open', id => {
+                STATE.roomCode = id; updateRoomUI();
+                addChatMsg('🏠 房间已创建，等待好友…', 'system');
+                showToast('房间号: '+id);
+                STATE.peer.on('connection', conn => {
+                    if(STATE.conn) return;
+                    STATE.conn = conn; setupConn(conn);
+                    STATE.opponentName = '对手'; updateScoreboard();
+                    addChatMsg('🎉 好友已连接！', 'system');
+                    const tryStart = () => { if(!STATE.gameActive) startGame(); };
+                    if(conn.open) tryStart(); else conn.on('open', tryStart);
                 });
-                STATE.peer.on('open', (id) => {
-                    console.log('✅ 房主 Peer 已开启，ID:', id);
-                    STATE.roomCode = id;
-                    updateRoomDisplay();
-                    addChatMessage('🏠 房间已创建，等待好友加入...', 'system');
-                    showToast('房间号: ' + id);
-                    STATE.peer.on('connection', (conn) => {
-                        if (STATE.conn) {
-                            conn.on('open', () => conn.close());
-                            return;
-                        }
-                        STATE.conn = conn;
-                        setupConnection(conn);
-                        STATE.opponentName = '对手';
-                        updateScoreboard();
-                        addChatMessage('🎉 好友已连接！游戏即将开始...', 'system');
-                        showToast('好友已加入！');
+            });
+            STATE.peer.on('error', e => showToast('⚠️ '+e.message));
+        }
 
-                        // ---- 修复点：确保连接真正打开后再开始游戏 ----
-                        function tryStartGame() {
-                            if (!STATE.gameActive) {
-                                startNewGame();
+        function setupGuest(hostId) {
+            STATE.peer = new Peer({ debug:1, config:ICE_SERVERS });
+            STATE.peer.on('open', () => {
+                const conn = STATE.peer.connect(hostId, {reliable:true});
+                STATE.conn = conn; setupConn(conn);
+                STATE.roomCode = hostId; STATE.playerId='player2'; STATE.playerName='挑战者';
+                updateRoomUI(); updateScoreboard();
+                conn.on('open', () => {
+                    addChatMsg('✅ 已连接，等待游戏开始', 'system');
+                    sendMsg({type:'player_joined', playerName:STATE.playerName});
+                });
+            });
+        }
+
+        function setupConn(conn) {
+            conn.on('data', msg => {
+                if(msg.senderId===STATE.playerId) return;
+                switch(msg.type) {
+                    case 'draw_action': if(!STATE.isDrawer&&STATE.roundActive) replayAction(msg.action); break;
+                    case 'clear_canvas': if(!STATE.isDrawer) clearCanvas(); break;
+                    case 'player_joined': STATE.opponentName=msg.playerName; updateScoreboard(); break;
+                    case 'game_start': handleGameStart(msg); break;
+                    case 'round_start': handleRoundStart(msg); break;
+                    case 'guess_result':
+                        if(msg.correct) {
+                            addChatMsg('✅ 猜对了！', 'correct');
+                            showToast('猜对了！');
+                            if(!STATE.isDrawer) {
+                                STATE.myScore += Math.max(1, Math.floor(STATE.timeLeft/5));
+                                updateScoreboard();
                             }
-                        }
-                        if (conn.open) {
-                            tryStartGame();
+                            endRound(true);
                         } else {
-                            conn.on('open', () => {
-                                tryStartGame();
-                            });
-                            // 超时保护：5秒后仍未打开则提示
-                            setTimeout(() => {
-                                if (!conn.open && !STATE.gameActive) {
-                                    showToast('⚠️ 连接建立缓慢，请尝试重新创建房间');
-                                }
-                            }, 5000);
+                            addChatMsg('❌ 猜错了', 'wrong');
+                            showToast('猜错了，再试试');
                         }
-                    });
-                });
-                STATE.peer.on('error', (err) => {
-                    console.error('Peer error:', err);
-                    if (err.type === 'unavailable-id') {
-                        showToast('该房间号已被占用，请重新创建');
-                    } else if (err.type === 'peer-unavailable') {
-                        showToast('对方不在线或房间号错误');
-                    } else {
-                        showToast('⚠️ 连接错误: ' + err.message);
-                    }
-                });
-            } catch (e) {
-                showToast('❌ 创建房间失败，请重试');
-                console.error(e);
-            }
-        }
-
-        function setupPeerAsGuest(hostId) {
-            try {
-                STATE.peer = new Peer({
-                    debug: 1,
-                    config: ICE_SERVERS,
-                });
-                STATE.peer.on('open', (myId) => {
-                    console.log('✅ 客人 Peer 已开启，我的ID:', myId);
-                    const conn = STATE.peer.connect(hostId, { reliable: true });
-                    STATE.conn = conn;
-                    setupConnection(conn);
-                    STATE.roomCode = hostId;
-                    STATE.playerId = 'player2';
-                    STATE.playerName = '挑战者';
-                    updateRoomDisplay();
-                    updateScoreboard();
-                    addChatMessage('🔗 正在连接房间: ' + hostId, 'system');
-                    conn.on('open', () => {
-                        addChatMessage('✅ 已连接到房主，等待游戏开始...', 'system');
-                        showToast('已加入房间！');
-                        sendMessage({ type:'player_joined', playerName: STATE.playerName });
-                    });
-                });
-                STATE.peer.on('error', (err) => {
-                    console.error('Peer error:', err);
-                    if(err.type === 'peer-unavailable') {
-                        showToast('⚠️ 找不到该房间，请确认房间号是否正确');
-                    } else {
-                        showToast('⚠️ 连接失败: ' + err.message);
-                    }
-                });
-            } catch(e) {
-                showToast('❌ 加入房间失败');
-                console.error(e);
-            }
-        }
-
-        function setupConnection(conn) {
-            conn.on('data', (msg) => {
-                if(msg.senderId === STATE.playerId) return;
-                handleIncomingMessage(msg);
+                        break;
+                    case 'round_end': handleRoundEnd(msg); break;
+                    case 'game_over': handleGameOver(msg); break;
+                    case 'chat_message':
+                        addChatMsg(msg.text, '', msg.sender);
+                        break;
+                    case 'request_snapshot': if(STATE.isDrawer) sendSnapshot(); break;
+                    case 'canvas_snapshot':
+                        if(!STATE.isDrawer&&msg.imageData) {
+                            const img=new Image();
+                            img.onload=()=>{ resizeCanvas(); ctx.drawImage(img,0,0,canvas.getBoundingClientRect().width,canvas.getBoundingClientRect().height); };
+                            img.src=msg.imageData;
+                        }
+                        break;
+                }
             });
-            conn.on('close', () => {
-                addChatMessage('🔌 连接断开，对手已离开', 'system');
-                STATE.conn = null;
-                resetGameState();
-                updateRoomDisplay();
-                showToast('对手离开了房间');
-            });
-            conn.on('error', (err) => {
-                console.error('连接错误:', err);
-                showToast('⚠️ 连接异常: ' + (err.message || '未知错误'));
-            });
+            conn.on('close', ()=>{ addChatMsg('对手离开', 'system'); resetState(); });
         }
 
-        function handleIncomingMessage(msg) {
-            switch(msg.type) {
-                case 'draw_action':
-                    if(!STATE.isDrawer && STATE.roundActive) replayDrawAction(msg.action);
-                    break;
-                case 'clear_canvas':
-                    if(!STATE.isDrawer) clearCanvas();
-                    break;
-                case 'canvas_snapshot':
-                    if(!STATE.isDrawer && msg.imageData) {
-                        const img = new Image();
-                        img.onload = () => { resizeCanvas(); ctx.drawImage(img,0,0,canvas.getBoundingClientRect().width,canvas.getBoundingClientRect().height); };
-                        img.src = msg.imageData;
-                    }
-                    break;
-                case 'player_joined':
-                    STATE.opponentName = msg.playerName || '对手';
-                    updateScoreboard();
-                    addChatMessage(`${STATE.opponentName} 加入了房间`, 'system');
-                    break;
-                case 'game_start': handleGameStart(msg); break;
-                case 'round_start': handleRoundStart(msg); break;
-                case 'guess_submitted':
-                    if(STATE.isDrawer && STATE.roundActive) {
-                        addChatMessage(`"${msg.guess}"`, 'wrong', STATE.opponentName);
-                        sfxWrong();
-                    }
-                    break;
-                case 'correct_guess': handleCorrectGuess(msg); break;
-                case 'round_end': handleRoundEnd(msg); break;
-                case 'game_over': handleGameOver(msg); break;
-                case 'request_snapshot':
-                    if(STATE.isDrawer && STATE.roundActive) sendCanvasSnapshot();
-                    break;
-            }
-        }
-
-        function sendCanvasSnapshot() {
+        function sendSnapshot() {
             resizeCanvas();
-            const data = canvas.toDataURL('image/png');
-            sendMessage({ type:'canvas_snapshot', imageData: data });
+            sendMsg({type:'canvas_snapshot', imageData: canvas.toDataURL('image/png')});
         }
 
-        // ==================== 游戏流程 ====================
-        function resetGameState() {
+        function resetState() {
             clearInterval(STATE.timerInterval);
-            STATE.timerInterval=null; STATE.gameActive=false; STATE.roundActive=false;
-            STATE.isDrawer=false; STATE.currentWord=''; STATE.wordHint='';
-            STATE.timeLeft=STATE.roundTime; STATE.currentRound=0; STATE.drawActions=[];
-            timerFill.style.width='100%'; timerFill.classList.remove('warning');
-            wordDisplay.textContent=''; canvasOverlay.textContent='';
+            STATE.gameActive=STATE.roundActive=false; STATE.isDrawer=false;
+            STATE.currentWord=''; guessInput.disabled=btnSubmitGuess.disabled=true;
             canvasWrapper.classList.remove('active-draw');
-            guessInput.disabled=true; btnSendGuess.disabled=true;
-            updateScoreboard(); clearCanvas(); updateToolsVisibility();
+            wordHintDisplay.textContent=''; canvasOverlay.textContent='';
+            updateScoreboard(); clearCanvas();
         }
 
-        function startNewGame() {
-            if(!STATE.conn || !STATE.conn.open) return;
-            STATE.gameActive=true; STATE.currentRound=0; STATE.myScore=0; STATE.opponentScore=0;
-            STATE.totalRounds=6;
-            updateScoreboard();
-            addChatMessage('🎮 游戏开始！共'+STATE.totalRounds+'轮', 'system');
-            sendMessage({ type:'game_start', totalRounds:STATE.totalRounds,
-                player1Name: STATE.playerId==='player1'?STATE.playerName:'对手',
-                player2Name: STATE.playerId==='player2'?STATE.playerName:'对手'
-            });
-            startNextRound();
+        function startGame() {
+            STATE.gameActive=true; STATE.currentRound=0; STATE.myScore=STATE.opponentScore=0;
+            updateScoreboard(); addChatMsg('🎮 游戏开始！共6轮','system');
+            sendMsg({type:'game_start', totalRounds:6, p1:STATE.playerId==='player1'?STATE.playerName:'对手', p2:STATE.playerId==='player2'?STATE.playerName:'对手'});
+            nextRound();
         }
 
         function handleGameStart(msg) {
-            STATE.gameActive=true; STATE.currentRound=0; STATE.myScore=0; STATE.opponentScore=0;
-            STATE.totalRounds=msg.totalRounds||6;
-            if(STATE.playerId==='player1') STATE.opponentName=msg.player2Name||'对手';
-            else STATE.opponentName=msg.player1Name||'对手';
-            updateScoreboard();
-            addChatMessage('🎮 游戏开始！共'+STATE.totalRounds+'轮', 'system');
-            startNextRound();
+            STATE.gameActive=true; STATE.currentRound=0; STATE.myScore=STATE.opponentScore=0;
+            if(STATE.playerId==='player1') STATE.opponentName=msg.p2||'对手'; else STATE.opponentName=msg.p1||'对手';
+            updateScoreboard(); addChatMsg('🎮 游戏开始！','system'); nextRound();
         }
 
-        function startNextRound() {
+        function nextRound() {
             STATE.currentRound++;
-            if(STATE.currentRound > STATE.totalRounds) { endGame(); return; }
-            const drawerIsPlayer1 = (STATE.currentRound % 2 === 1);
-            STATE.isDrawer = (drawerIsPlayer1 && STATE.playerId==='player1') || (!drawerIsPlayer1 && STATE.playerId==='player2');
+            if(STATE.currentRound>STATE.totalRounds) { endGame(); return; }
+            const drawerIsP1 = STATE.currentRound%2===1;
+            STATE.isDrawer = (drawerIsP1&&STATE.playerId==='player1') || (!drawerIsP1&&STATE.playerId==='player2');
             STATE.roundActive=true; STATE.timeLeft=STATE.roundTime; STATE.drawActions=[];
-            clearCanvas(); timerFill.style.width='100%'; timerFill.classList.remove('warning');
-
+            clearCanvas(); canvasWrapper.classList.toggle('active-draw', STATE.isDrawer);
+            guessInput.disabled = btnSubmitGuess.disabled = STATE.isDrawer;
             if(STATE.isDrawer) {
-                STATE.currentWord = getRandomWord();
-                STATE.wordHint = getWordHint(STATE.currentWord);
-                wordDisplay.textContent = '🎯 你要画的是：'+STATE.currentWord;
-                canvasOverlay.textContent=''; canvasWrapper.classList.add('active-draw');
-                guessInput.disabled=true; btnSendGuess.disabled=true;
-                updateToolsVisibility();
-                addChatMessage('🎨 轮到你画画了！词语：'+STATE.currentWord, 'system');
+                STATE.currentWord=getRandomWord(); STATE.wordHint=getWordHint(STATE.currentWord);
+                wordHintDisplay.textContent='🎯 '+STATE.currentWord;
+                canvasOverlay.textContent='';
+                addChatMsg('🎨 轮到你画画！词：'+STATE.currentWord,'system');
             } else {
                 STATE.currentWord=''; STATE.wordHint='';
-                wordDisplay.textContent='👀 观看中...快来猜！';
-                canvasOverlay.textContent='🖼️'; canvasWrapper.classList.remove('active-draw');
-                guessInput.disabled=false; btnSendGuess.disabled=false; guessInput.focus();
-                updateToolsVisibility();
-                addChatMessage('👀 对手正在画画，快来猜！', 'system');
-                setTimeout(()=>sendMessage({type:'request_snapshot'}), 400);
+                wordHintDisplay.textContent='';
+                canvasOverlay.textContent='👀 猜词中';
+                guessInput.focus();
+                addChatMsg('👀 对手正在画画，输入答案吧','system');
+                setTimeout(()=>sendMsg({type:'request_snapshot'}), 300);
             }
             updateScoreboard(); startTimer();
-            sendMessage({ type:'round_start', round:STATE.currentRound,
-                drawerPlayerId: drawerIsPlayer1?'player1':'player2',
-                wordHint: STATE.isDrawer?STATE.wordHint:'',
-                timeLeft: STATE.timeLeft
-            });
-            sfxRoundStart();
+            sendMsg({type:'round_start', round:STATE.currentRound, drawer:drawerIsP1?'player1':'player2', time:STATE.timeLeft});
         }
 
         function handleRoundStart(msg) {
-            STATE.roundActive=true; STATE.timeLeft=msg.timeLeft||STATE.roundTime;
-            STATE.drawActions=[]; clearCanvas();
-            timerFill.style.width='100%'; timerFill.classList.remove('warning');
-            const drawerIsPlayer1 = (msg.drawerPlayerId==='player1');
-            STATE.isDrawer = (drawerIsPlayer1 && STATE.playerId==='player1') || (!drawerIsPlayer1 && STATE.playerId==='player2');
+            STATE.roundActive=true; STATE.timeLeft=msg.time; STATE.drawActions=[]; clearCanvas();
+            const drawerP1 = msg.drawer==='player1';
+            STATE.isDrawer = (drawerP1&&STATE.playerId==='player1')||(!drawerP1&&STATE.playerId==='player2');
+            canvasWrapper.classList.toggle('active-draw', STATE.isDrawer);
+            guessInput.disabled = btnSubmitGuess.disabled = STATE.isDrawer;
             if(STATE.isDrawer) {
-                if(!STATE.currentWord) STATE.currentWord = getRandomWord();
-                STATE.wordHint = getWordHint(STATE.currentWord);
-                wordDisplay.textContent='🎯 你要画的是：'+STATE.currentWord;
-                canvasOverlay.textContent=''; canvasWrapper.classList.add('active-draw');
-                guessInput.disabled=true; btnSendGuess.disabled=true;
-                updateToolsVisibility();
+                if(!STATE.currentWord) STATE.currentWord=getRandomWord();
+                STATE.wordHint=getWordHint(STATE.currentWord);
+                wordHintDisplay.textContent='🎯 '+STATE.currentWord;
+                canvasOverlay.textContent='';
             } else {
-                STATE.currentWord=''; STATE.wordHint=msg.wordHint||'';
-                wordDisplay.textContent='👀 观看中...快来猜！';
-                canvasOverlay.textContent='🖼️'; canvasWrapper.classList.remove('active-draw');
-                guessInput.disabled=false; btnSendGuess.disabled=false; guessInput.focus();
-                updateToolsVisibility();
-                setTimeout(()=>sendMessage({type:'request_snapshot'}), 400);
+                STATE.currentWord=''; wordHintDisplay.textContent='';
+                canvasOverlay.textContent='👀 猜词中'; guessInput.focus();
+                setTimeout(()=>sendMsg({type:'request_snapshot'}), 300);
             }
             updateScoreboard(); startTimer();
         }
 
         function startTimer() {
             clearInterval(STATE.timerInterval);
-            STATE.timeLeft = STATE.roundTime;
-            timerFill.style.width='100%'; timerFill.classList.remove('warning');
-            STATE.timerInterval = setInterval(() => {
+            STATE.timeLeft=STATE.roundTime;
+            STATE.timerInterval = setInterval(()=>{
                 STATE.timeLeft--;
-                timerFill.style.width = (STATE.timeLeft/STATE.roundTime*100)+'%';
-                if(STATE.timeLeft<=10) { timerFill.classList.add('warning'); if(STATE.timeLeft>0) sfxTick(); }
-                if(STATE.timeLeft<=0) { clearInterval(STATE.timerInterval); STATE.timerInterval=null; endRound(false); }
-            }, 1000);
+                if(STATE.timeLeft<=0) { clearInterval(STATE.timerInterval); if(STATE.isDrawer) endRound(false); }
+            },1000);
         }
 
         function endRound(wasCorrect) {
-            clearInterval(STATE.timerInterval); STATE.timerInterval=null;
+            clearInterval(STATE.timerInterval);
             STATE.roundActive=false; STATE.isDrawing=false;
-            guessInput.disabled=true; btnSendGuess.disabled=true;
-            canvasWrapper.classList.remove('active-draw'); updateToolsVisibility();
-            wordDisplay.textContent='📝 答案是：'+(STATE.currentWord||STATE.wordHint||'???');
-            canvasOverlay.textContent=STATE.currentWord||'';
-            sendMessage({ type:'round_end', round:STATE.currentRound, word:STATE.currentWord, wasCorrect });
-            setTimeout(()=>{ if(STATE.gameActive) startNextRound(); }, 2500);
+            guessInput.disabled=btnSubmitGuess.disabled=true;
+            canvasWrapper.classList.remove('active-draw');
+            if(STATE.isDrawer&&!wasCorrect) addChatMsg('⏰ 时间到！答案是：'+STATE.currentWord,'system');
+            sendMsg({type:'round_end', word:STATE.currentWord});
+            setTimeout(()=>{ if(STATE.gameActive) nextRound(); }, 2200);
         }
 
         function handleRoundEnd(msg) {
-            clearInterval(STATE.timerInterval); STATE.timerInterval=null;
-            STATE.roundActive=false; STATE.isDrawing=false;
-            guessInput.disabled=true; btnSendGuess.disabled=true;
-            canvasWrapper.classList.remove('active-draw'); updateToolsVisibility();
-            wordDisplay.textContent='📝 答案是：'+(msg.word||'???');
-            canvasOverlay.textContent=msg.word||'';
-            setTimeout(()=>{ if(STATE.gameActive) startNextRound(); }, 2500);
-        }
-
-        function handleCorrectGuess(msg) {
-            if(STATE.isDrawer && STATE.roundActive) {
-                STATE.roundActive=false;
-                clearInterval(STATE.timerInterval); STATE.timerInterval=null;
-                STATE.opponentScore += Math.max(1, Math.floor(STATE.timeLeft/5));
-                updateScoreboard();
-                addChatMessage('🎉 对手猜对了！+分', 'correct');
-                sfxCorrect();
-                endRound(true);
-            }
+            clearInterval(STATE.timerInterval); STATE.roundActive=false;
+            guessInput.disabled=btnSubmitGuess.disabled=true;
+            canvasWrapper.classList.remove('active-draw');
+            if(!STATE.isDrawer) canvasOverlay.textContent=msg.word||'';
+            setTimeout(()=>{ if(STATE.gameActive) nextRound(); }, 2200);
         }
 
         function submitGuess() {
-            if(!STATE.roundActive || STATE.isDrawer) return;
-            const guess = guessInput.value.trim(); if(!guess) return;
+            if(!STATE.roundActive||STATE.isDrawer) return;
+            const g = guessInput.value.trim(); if(!g) return;
             guessInput.value = '';
-            addChatMessage('💬 '+guess, 'wrong', '你');
-            sendMessage({ type:'guess_submitted', guess:guess, playerName:STATE.playerName });
-            sfxWrong();
+            // 发送给画家判断
+            sendMsg({type:'guess_check', guess:g, sender:STATE.playerName});
             guessInput.focus();
         }
 
+        function handleGuessCheck(msg) {
+            if(!STATE.isDrawer||!STATE.roundActive) return;
+            const correct = msg.guess === STATE.currentWord;
+            sendMsg({type:'guess_result', correct, sender:STATE.playerName});
+            if(correct) {
+                STATE.opponentScore += Math.max(1, Math.floor(STATE.timeLeft/5));
+                updateScoreboard();
+                addChatMsg('🎉 对手猜对了！','correct');
+                endRound(true);
+            } else {
+                addChatMsg(`💬 ${msg.sender}: "${msg.guess}"`, 'wrong');
+            }
+        }
+
         function endGame() {
-            STATE.gameActive=false; STATE.roundActive=false; clearInterval(STATE.timerInterval);
-            STATE.isDrawer=false; STATE.isDrawing=false;
-            guessInput.disabled=true; btnSendGuess.disabled=true;
-            canvasWrapper.classList.remove('active-draw'); updateToolsVisibility();
-            let resultMsg = STATE.myScore>STATE.opponentScore?'🏆 你赢了！':(STATE.myScore<STATE.opponentScore?'😢 对手赢了！':'🤝 平局！');
-            addChatMessage('🏁 游戏结束！'+resultMsg+' 比分 '+STATE.myScore+':'+STATE.opponentScore, 'system');
-            sfxGameOver(); showToast(resultMsg+' 最终比分: '+STATE.myScore+' - '+STATE.opponentScore, 4000);
-            sendMessage({ type:'game_over', myScore:STATE.myScore, opponentScore:STATE.opponentScore });
-            setTimeout(() => { STATE.myScore=0; STATE.opponentScore=0; STATE.currentRound=0; updateScoreboard(); clearCanvas(); }, 3000);
+            STATE.gameActive=false; clearInterval(STATE.timerInterval);
+            guessInput.disabled=btnSubmitGuess.disabled=true;
+            canvasWrapper.classList.remove('active-draw');
+            const r = STATE.myScore>STATE.opponentScore?'🏆 你赢了！':(STATE.myScore<STATE.opponentScore?'😢 对手赢了！':'🤝 平局');
+            addChatMsg(r+' 比分 '+STATE.myScore+':'+STATE.opponentScore,'system');
+            sendMsg({type:'game_over'});
+            setTimeout(()=>{ STATE.myScore=STATE.opponentScore=0; updateScoreboard(); },3000);
         }
 
         function handleGameOver(msg) {
-            STATE.gameActive=false; STATE.roundActive=false; clearInterval(STATE.timerInterval);
-            STATE.isDrawer=false; STATE.isDrawing=false;
-            guessInput.disabled=true; btnSendGuess.disabled=true;
-            canvasWrapper.classList.remove('active-draw'); updateToolsVisibility();
-            STATE.myScore = msg.opponentScore||0; STATE.opponentScore = msg.myScore||0;
-            let resultMsg = STATE.myScore>STATE.opponentScore?'🏆 你赢了！':(STATE.myScore<STATE.opponentScore?'😢 对手赢了！':'🤝 平局！');
-            addChatMessage('🏁 游戏结束！'+resultMsg+' 比分 '+STATE.myScore+':'+STATE.opponentScore, 'system');
-            sfxGameOver(); updateScoreboard();
+            STATE.gameActive=false; clearInterval(STATE.timerInterval);
+            guessInput.disabled=btnSubmitGuess.disabled=true;
+            canvasWrapper.classList.remove('active-draw');
         }
 
-        // ==================== UI 更新 ====================
         function updateScoreboard() {
-            scoreCard1.querySelector('.name').textContent = '👤 '+(STATE.playerName||'你');
-            scoreCard1.querySelector('.points').textContent = STATE.myScore;
-            scoreCard2.querySelector('.name').textContent = '👤 '+(STATE.opponentName||'对手');
-            scoreCard2.querySelector('.points').textContent = STATE.opponentScore;
-            const r1 = scoreCard1.querySelector('.role-badge');
-            const r2 = scoreCard2.querySelector('.role-badge');
+            scoreCard1.querySelector('.points').textContent=STATE.myScore;
+            scoreCard2.querySelector('.points').textContent=STATE.opponentScore;
+            scoreCard1.querySelector('.name').textContent='👤 '+(STATE.playerName||'你');
+            scoreCard2.querySelector('.name').textContent='👤 '+(STATE.opponentName||'对手');
+            const r1=scoreCard1.querySelector('.role-badge'), r2=scoreCard2.querySelector('.role-badge');
             if(STATE.roundActive) {
-                if(STATE.isDrawer) { r1.textContent='🎨 画家'; r1.className='role-badge role-drawer'; r2.textContent='🔍 猜词'; r2.className='role-badge role-guesser'; }
-                else { r1.textContent='🔍 猜词'; r1.className='role-badge role-guesser'; r2.textContent='🎨 画家'; r2.className='role-badge role-drawer'; }
-            } else { r1.textContent='准备'; r1.className='role-badge role-guesser'; r2.textContent='准备'; r2.className='role-badge role-guesser'; }
-            scoreCard1.classList.toggle('active-turn', STATE.isDrawer && STATE.roundActive);
-            scoreCard2.classList.toggle('active-turn', !STATE.isDrawer && STATE.roundActive && STATE.gameActive);
-        }
-        function updateToolsVisibility() {
-            if(STATE.isDrawer && STATE.roundActive) { toolsRow.style.opacity='1'; toolsRow.style.pointerEvents='auto'; }
-            else if(!STATE.isDrawer && STATE.roundActive) { toolsRow.style.opacity='0.35'; toolsRow.style.pointerEvents='none'; }
-            else { toolsRow.style.opacity='0.5'; toolsRow.style.pointerEvents='auto'; }
-        }
-        function updateRoomDisplay() {
-            if(STATE.roomCode) {
-                roomCodeDisplay.textContent = STATE.roomCode;
-                roomBadge.querySelector('.dot').style.background='var(--success)';
-                roomBadge.style.cursor='pointer';
-            } else {
-                roomCodeDisplay.textContent = '----';
-                roomBadge.querySelector('.dot').style.background='#888';
-                roomBadge.style.cursor='default';
-            }
+                if(STATE.isDrawer) { r1.textContent='🎨 画家'; r2.textContent='🔍 猜词'; }
+                else { r1.textContent='🔍 猜词'; r2.textContent='🎨 画家'; }
+            } else { r1.textContent='准备'; r2.textContent='准备'; }
+            scoreCard1.classList.toggle('active-turn', STATE.isDrawer&&STATE.roundActive);
+            scoreCard2.classList.toggle('active-turn', !STATE.isDrawer&&STATE.roundActive&&STATE.gameActive);
         }
 
-        // ==================== 房间管理 ====================
-        function createRoom() {
-            const roomId = 'dg'+Math.random().toString(36).substring(2,8).toUpperCase();
-            STATE.playerId = 'player1';
-            STATE.playerName = '房主';
-            STATE.opponentName = '等待加入...';
-            STATE.myScore=0; STATE.opponentScore=0;
-            setupPeerAsHost(roomId);
-            modalOverlay.classList.add('hidden');
-            guessInput.disabled=true; btnSendGuess.disabled=true;
-            updateToolsVisibility();
+        function updateRoomUI() {
+            roomCodeDisplay.textContent = STATE.roomCode||'----';
         }
 
-        function joinRoom(code) {
-            if(!code || code.length<3) { showToast('⚠️ 请输入有效的房间号'); return; }
-            STATE.roomCode = code;
-            STATE.playerId = 'player2';
-            STATE.playerName = '挑战者';
-            STATE.opponentName = '房主';
-            STATE.myScore=0; STATE.opponentScore=0;
-            setupPeerAsGuest(code);
-            modalOverlay.classList.add('hidden');
-            guessInput.disabled=true; btnSendGuess.disabled=true;
-            updateToolsVisibility();
-        }
-
-        function leaveRoom() {
-            if(STATE.conn) { STATE.conn.close(); STATE.conn=null; }
-            if(STATE.peer) { STATE.peer.destroy(); STATE.peer=null; }
-            resetGameState();
-            STATE.roomCode=null; STATE.playerId=null; STATE.playerName=''; STATE.opponentName='对手';
-            updateRoomDisplay(); updateScoreboard(); clearCanvas();
-            wordDisplay.textContent=''; canvasOverlay.textContent='';
-            chatMessages.innerHTML='<div class="chat-msg system">👋 欢迎！创建房间或输入房间号加入好友对战。</div>';
-            modalOverlay.classList.remove('hidden');
-            showToast('已离开房间');
-        }
-
-        function copyInviteLink() {
-            if(!STATE.roomCode) { showToast('⚠️ 请先创建房间'); return; }
-            const link = window.location.origin + window.location.pathname + '?room=' + STATE.roomCode;
-            const text = `🎨 来玩你画我猜吧！\n房间号：${STATE.roomCode}\n链接：${link}\n\n💡 在手机/电脑浏览器打开链接即可加入`;
-            if(navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(()=>showToast('📋 邀请信息已复制！发送给好友'));
-            } else {
-                showToast('📋 房间号: '+STATE.roomCode);
-            }
-        }
-
-        // ==================== 事件绑定 ====================
-        canvas.addEventListener('mousedown', (e) => {
+        // 事件绑定
+        canvas.addEventListener('mousedown', e=>{
             if(!STATE.isDrawer||!STATE.roundActive) return;
-            e.preventDefault(); STATE.isDrawing=true;
-            const p=getCanvasPos(e); STATE.lastX=p.x; STATE.lastY=p.y;
-            drawLine(p.x,p.y,p.x+0.0005,p.y+0.0005,STATE.color,STATE.brushSize,STATE.tool);
-            const action={nx1:p.x,ny1:p.y,nx2:p.x+0.0005,ny2:p.y+0.0005,color:STATE.color,size:STATE.brushSize,tool:STATE.tool};
-            STATE.drawActions.push(action); broadcastDrawAction(action);
+            STATE.isDrawing=true; const p=getPos(e); STATE.lastX=p.x; STATE.lastY=p.y;
+            const a={nx1:p.x,ny1:p.y,nx2:p.x+0.0005,ny2:p.y+0.0005,color:STATE.color,size:STATE.brushSize,tool:STATE.tool};
+            STATE.drawActions.push(a); drawLine(a.nx1,a.ny1,a.nx2,a.ny2,a.color,a.size,a.tool); broadcastDraw(a);
         });
-        canvas.addEventListener('mousemove', (e) => {
-            if(!STATE.isDrawing||!STATE.isDrawer||!STATE.roundActive) return;
-            e.preventDefault(); const p=getCanvasPos(e);
-            drawLine(STATE.lastX,STATE.lastY,p.x,p.y,STATE.color,STATE.brushSize,STATE.tool);
-            const action={nx1:STATE.lastX,ny1:STATE.lastY,nx2:p.x,ny2:p.y,color:STATE.color,size:STATE.brushSize,tool:STATE.tool};
-            STATE.drawActions.push(action); broadcastDrawAction(action);
+        canvas.addEventListener('mousemove', e=>{
+            if(!STATE.isDrawing) return;
+            const p=getPos(e); const a={nx1:STATE.lastX,ny1:STATE.lastY,nx2:p.x,ny2:p.y,color:STATE.color,size:STATE.brushSize,tool:STATE.tool};
+            STATE.drawActions.push(a); drawLine(a.nx1,a.ny1,a.nx2,a.ny2,a.color,a.size,a.tool); broadcastDraw(a);
             STATE.lastX=p.x; STATE.lastY=p.y;
         });
         canvas.addEventListener('mouseup', ()=>STATE.isDrawing=false);
-        canvas.addEventListener('mouseleave', ()=>STATE.isDrawing=false);
-        canvas.addEventListener('touchstart', (e) => {
+        canvas.addEventListener('touchstart', e=>{
             if(!STATE.isDrawer||!STATE.roundActive||e.touches.length!==1) return;
-            e.preventDefault(); STATE.isDrawing=true;
-            const p=getCanvasPosTouch(e); STATE.lastX=p.x; STATE.lastY=p.y;
-            drawLine(p.x,p.y,p.x+0.0005,p.y+0.0005,STATE.color,STATE.brushSize,STATE.tool);
-            const action={nx1:p.x,ny1:p.y,nx2:p.x+0.0005,ny2:p.y+0.0005,color:STATE.color,size:STATE.brushSize,tool:STATE.tool};
-            STATE.drawActions.push(action); broadcastDrawAction(action);
-        }, {passive:false});
-        canvas.addEventListener('touchmove', (e) => {
-            if(!STATE.isDrawing||!STATE.isDrawer||!STATE.roundActive||e.touches.length!==1) return;
-            e.preventDefault(); const p=getCanvasPosTouch(e);
-            drawLine(STATE.lastX,STATE.lastY,p.x,p.y,STATE.color,STATE.brushSize,STATE.tool);
-            const action={nx1:STATE.lastX,ny1:STATE.lastY,nx2:p.x,ny2:p.y,color:STATE.color,size:STATE.brushSize,tool:STATE.tool};
-            STATE.drawActions.push(action); broadcastDrawAction(action);
+            e.preventDefault(); STATE.isDrawing=true; const p=getTouchPos(e); STATE.lastX=p.x; STATE.lastY=p.y;
+            const a={nx1:p.x,ny1:p.y,nx2:p.x+0.0005,ny2:p.y+0.0005,color:STATE.color,size:STATE.brushSize,tool:STATE.tool};
+            STATE.drawActions.push(a); drawLine(a.nx1,a.ny1,a.nx2,a.ny2,a.color,a.size,a.tool); broadcastDraw(a);
+        },{passive:false});
+        canvas.addEventListener('touchmove', e=>{
+            if(!STATE.isDrawing||e.touches.length!==1) return;
+            e.preventDefault(); const p=getTouchPos(e); const a={nx1:STATE.lastX,ny1:STATE.lastY,nx2:p.x,ny2:p.y,color:STATE.color,size:STATE.brushSize,tool:STATE.tool};
+            STATE.drawActions.push(a); drawLine(a.nx1,a.ny1,a.nx2,a.ny2,a.color,a.size,a.tool); broadcastDraw(a);
             STATE.lastX=p.x; STATE.lastY=p.y;
-        }, {passive:false});
+        },{passive:false});
         canvas.addEventListener('touchend', ()=>STATE.isDrawing=false);
-        canvas.addEventListener('touchcancel', ()=>STATE.isDrawing=false);
 
-        toolsRow.addEventListener('click', (e) => {
-            const toolBtn = e.target.closest('.tool-btn');
-            const colorDot = e.target.closest('.color-dot');
-            if(toolBtn) {
-                const tool = toolBtn.dataset.tool;
-                if(tool==='clear') { if(STATE.isDrawer&&STATE.roundActive) { clearCanvas(); STATE.drawActions=[]; sendMessage({type:'clear_canvas'}); } }
-                else { STATE.tool=tool; $$('.tool-btn').forEach(b=>b.classList.remove('active')); toolBtn.classList.add('active'); setDrawStyle(); }
+        toolsMini.addEventListener('click', e=>{
+            const btn = e.target.closest('button'); const dot = e.target.closest('.color-dot');
+            if(btn) {
+                const tool = btn.dataset.tool;
+                if(tool==='clear') { clearCanvas(); STATE.drawActions=[]; sendMsg({type:'clear_canvas'}); }
+                else { STATE.tool=tool; toolsMini.querySelectorAll('button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); setDrawStyle(); }
             }
-            if(colorDot) {
-                STATE.color=colorDot.dataset.color; STATE.tool='pen';
-                $$('.tool-btn').forEach(b=>b.classList.remove('active'));
-                toolsRow.querySelector('[data-tool="pen"]').classList.add('active');
-                $$('.color-dot').forEach(d=>d.classList.remove('active')); colorDot.classList.add('active');
+            if(dot) {
+                STATE.color=dot.dataset.color; STATE.tool='pen';
+                toolsMini.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+                toolsMini.querySelector('[data-tool="pen"]').classList.add('active');
+                toolsMini.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('active')); dot.classList.add('active');
                 customColorInput.value=STATE.color; setDrawStyle();
             }
         });
-        customColorInput.addEventListener('input', () => {
+        customColorInput.addEventListener('input', ()=>{
             STATE.color=customColorInput.value; STATE.tool='pen';
-            $$('.tool-btn').forEach(b=>b.classList.remove('active'));
-            toolsRow.querySelector('[data-tool="pen"]').classList.add('active');
-            $$('.color-dot').forEach(d=>d.classList.remove('active')); setDrawStyle();
+            toolsMini.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+            toolsMini.querySelector('[data-tool="pen"]').classList.add('active');
+            setDrawStyle();
         });
-        brushSizeInput.addEventListener('input', () => { STATE.brushSize=parseInt(brushSizeInput.value); setDrawStyle(); });
-        btnSendGuess.addEventListener('click', submitGuess);
-        guessInput.addEventListener('keydown', (e) => { if(e.key==='Enter') submitGuess(); });
-        btnCreateRoom.addEventListener('click', createRoom);
-        btnJoinRoom.addEventListener('click', () => joinRoom(joinRoomInput.value.trim()));
-        joinRoomInput.addEventListener('keydown', (e) => { if(e.key==='Enter') joinRoom(joinRoomInput.value.trim()); });
-        btnLeaveRoom.addEventListener('click', leaveRoom);
-        btnCopyInvite.addEventListener('click', copyInviteLink);
-        roomBadge.addEventListener('click', () => { if(STATE.roomCode) copyInviteLink(); });
-        window.addEventListener('resize', () => {
-            resizeCanvas();
-            if(STATE.drawActions.length>0 && !STATE.isDrawer) { clearCanvas(); STATE.drawActions.forEach(a=>replayDrawAction(a)); }
+        brushSizeInput.addEventListener('input', ()=>{ STATE.brushSize=parseInt(brushSizeInput.value); setDrawStyle(); });
+
+        btnSubmitGuess.addEventListener('click', submitGuess);
+        guessInput.addEventListener('keydown', e=>{ if(e.key==='Enter') submitGuess(); });
+        btnSendChat.addEventListener('click', ()=>{
+            const txt = chatInput.value.trim(); if(!txt) return;
+            addChatMsg(txt, '', STATE.playerName);
+            sendMsg({type:'chat_message', text:txt, sender:STATE.playerName});
+            chatInput.value = '';
         });
-        window.addEventListener('beforeunload', () => {
+        chatInput.addEventListener('keydown', e=>{ if(e.key==='Enter') { btnSendChat.click(); } });
+
+        $('#btnCreateRoom').addEventListener('click', ()=>{
+            const id = 'dg'+Math.random().toString(36).substring(2,8).toUpperCase();
+            STATE.playerId='player1'; STATE.playerName='房主'; setupHost(id);
+            modalOverlay.classList.add('hidden');
+        });
+        $('#btnJoinRoom').addEventListener('click', ()=>{
+            const code = $('#joinRoomInput').value.trim();
+            if(!code) return;
+            STATE.playerId='player2'; STATE.playerName='挑战者'; setupGuest(code);
+            modalOverlay.classList.add('hidden');
+        });
+        $('#btnLeaveRoom').addEventListener('click', ()=>{
             if(STATE.conn) STATE.conn.close();
             if(STATE.peer) STATE.peer.destroy();
+            resetState(); modalOverlay.classList.remove('hidden');
         });
+        $('#btnCopyInvite').addEventListener('click', ()=>{
+            const link = location.origin+location.pathname+'?room='+STATE.roomCode;
+            navigator.clipboard?.writeText(`🎨 你画我猜 房间号：${STATE.roomCode}\n${link}`).then(()=>showToast('已复制邀请'));
+        });
+        $('#roomBadge').addEventListener('click', ()=> $('#btnCopyInvite').click());
 
-        // 检查URL参数自动加入
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('beforeunload', ()=>{ if(STATE.conn) STATE.conn.close(); if(STATE.peer) STATE.peer.destroy(); });
+
+        // 消息处理扩展
+        const origHandle = setupConn;
+        // 重新绑定消息处理，增加 guess_check 类型
+        const originalOnData = (conn) => {
+            conn.on('data', msg => {
+                if(msg.senderId===STATE.playerId) return;
+                if(msg.type==='guess_check') handleGuessCheck(msg);
+                // 其他消息已在上面 setupConn 中处理，为防重复，此处跳过
+            });
+        };
+        // 修改 setupConn 以整合新的消息处理
+        const oldSetupConn = setupConn;
+        setupConn = function(conn) {
+            oldSetupConn(conn);
+            conn.on('data', msg => {
+                if(msg.type==='guess_check') handleGuessCheck(msg);
+            });
+        };
+
         function init() {
-            initCanvas(); updateRoomDisplay(); updateScoreboard(); updateToolsVisibility();
-            guessInput.disabled=true; btnSendGuess.disabled=true; setDrawStyle();
+            resizeCanvas(); clearCanvas(); setDrawStyle();
             modalOverlay.classList.remove('hidden');
-            const urlParams = new URLSearchParams(window.location.search);
-            const roomFromUrl = urlParams.get('room');
-            if(roomFromUrl) {
-                joinRoomInput.value = roomFromUrl;
-                setTimeout(() => joinRoom(roomFromUrl), 600);
-            }
-            STATE.initialized=true;
+            const p = new URLSearchParams(location.search).get('room');
+            if(p) { $('#joinRoomInput').value=p; setTimeout(()=>$('#btnJoinRoom').click(), 500); }
         }
         init();
     })();
